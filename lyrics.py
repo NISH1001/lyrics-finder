@@ -5,6 +5,19 @@ from bs4 import BeautifulSoup
 import urllib.request, urllib.error, urllib.parse
 import sys
 
+def urlencode(text):
+    """
+        Url encode the text
+    """
+    q = {}
+    encoded = ""
+    if(text):
+        q['q'] = text
+        encoded = urllib.parse.urlencode(q)
+        encoded = encoded[2::]
+    return encoded
+
+
 class ManualError(Exception):
     def __init__(self, args):
         self.args = args
@@ -12,7 +25,15 @@ class ManualError(Exception):
         print(' '.join(self.args))
 
 def search(url, query):
-    url_search = url + "?q={}".format(query)
+    """
+        Searches the possible songs for this query.
+        Returns the list of url for the song
+    """
+
+    # first encode
+    query = urlencode(query.lower())
+    url_query = "?q={}".format(query)
+    url_search = url + url_query
     response = urllib.request.urlopen(url_search)
     extractor = BeautifulSoup(response.read(), "html.parser")
     anchors = []
@@ -20,12 +41,15 @@ def search(url, query):
         table = extractor.find_all("table", {'class' : 'table'})[0]
         rows = table.find_all('tr')
         anchors = [ row.find('td').find('a').get('href')  for row in rows ]
-        if len(anchors) < 1:
+
+        # discard if the link/anchor is just a pagination link
+        links = [ anchor for anchor in anchors if not url_query in anchor ]
+        if len(links) < 1:
             raise ManualError("no songs...")
     except ManualError as merr:
         merr.display()
-        anchors = []
-    return anchors
+        link = []
+    return links 
 
 def lyrics_full(url):
     response = urllib.request.urlopen(url)
@@ -43,6 +67,7 @@ def main():
 
     if(len(args) > 1):
         query = ' '.join(args[1::])
+        print("Searching...\nHave patience and be an awesome potato...")
         links = search(url, query)
 
     if links:
