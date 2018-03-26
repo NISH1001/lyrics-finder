@@ -120,7 +120,7 @@ def main():
     if links:
         print(links)
         s =select_song(links, 4)
-        lyrics = lyrics_full(links[0])
+        lyrics = lyrics_full(links[s])
         print(lyrics)
     else:
         print("No songs found... -_-")
